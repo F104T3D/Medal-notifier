@@ -1,8 +1,10 @@
-﻿#include <windows.h>
+#define PSAPI_VERSION 1
+#include <windows.h>
 #include <tlhelp32.h>
 #include <string>
 #include <thread>
 #include <chrono>
+#include <cwchar>
 #include <psapi.h>
 
 std::wstring GetSteamGamePath() {
@@ -45,8 +47,9 @@ bool IsProcessRunning(const std::wstring& processName) {
 
     if (Process32First(hSnap, &pe)) {
         do {
-            if (processName == pe.szExeFile) {
-                CloseHandle(hSnap);
+            std::string exeFile(pe.szExeFile);
+            if (std::wstring(exeFile.begin(), exeFile.end()) == processName) {        
+                CloseHandle(hSnap); 
                 return true;
             }
         } while (Process32Next(hSnap, &pe));
@@ -73,16 +76,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
     while (true) {
         std::wstring gamePath = GetSteamGamePath();
-        if (!gamePath.empty()) {
-            if (!IsProcessRunning(medalProcess)) {
+                                                                                                                        if (!gamePath.empty()) {
+                                                                                                                            if (!IsProcessRunning(medalProcess)) {
                 LaunchMedal();
-
-                MessageBoxW(
-                    NULL,
-                    L"",
-                    L"",
-                    MB_ICONINFORMATION | MB_TOPMOST | MB_SYSTEMMODAL
-                );
+                //MessageBoxW(NULL, L"", L"", MB_ICONINFORMATION | MB_TOPMOST | MB_SYSTEMMODAL);
             }
 
             while (!GetSteamGamePath().empty()) {
