@@ -17,7 +17,7 @@ std::wstring GetSteamGamePath() {
             HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pe.th32ProcessID);
             if (hProcess) {
                 wchar_t path[MAX_PATH];
-                if (GetModuleFileNameEx(hProcess, NULL, path, MAX_PATH)) {
+                if (GetModuleFileNameExW(hProcess, NULL, path, MAX_PATH)) {
                     std::wstring exePath(path);
 
                     if (exePath.find(L"steamapps") != std::wstring::npos && exePath.find(L".exe") != std::wstring::npos) {
@@ -57,13 +57,13 @@ bool IsProcessRunning(const std::wstring& processName) {
 }
 
 void LaunchMedal() {
-    ShellExecute(NULL, L"open", L"FILEPATH", NULL, NULL, SW_SHOWNORMAL);
+    ShellExecuteW(NULL, L"open", L"FILEPATH", NULL, NULL, SW_SHOWNORMAL);
 }
 
 void RestartSelf() {
     wchar_t exePath[MAX_PATH];
-    GetModuleFileName(NULL, exePath, MAX_PATH);
-    ShellExecute(NULL, L"open", exePath, NULL, NULL, SW_SHOWNORMAL);
+    GetModuleFileNameW(NULL, exePath, MAX_PATH);
+    ShellExecuteW(NULL, L"open", exePath, NULL, NULL, SW_SHOWNORMAL);
     exit(0);
 }
 
@@ -77,7 +77,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             if (!IsProcessRunning(medalProcess)) {
                 LaunchMedal();
 
-                MessageBox(
+                MessageBoxW(
                     NULL,
                     L"",
                     L"",
