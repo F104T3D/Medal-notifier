@@ -6,6 +6,8 @@
 #include <chrono>
 #include <cwchar>
 #include <psapi.h>
+#include <fstream>
+#include <sstream>
 
 std::wstring GetSteamGamePath() {
     HANDLE hSnap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
@@ -48,8 +50,8 @@ bool IsProcessRunning(const std::wstring& processName) {
     if (Process32First(hSnap, &pe)) {
         do {
             std::string exeFile(pe.szExeFile);
-            if (std::wstring(exeFile.begin(), exeFile.end()) == processName) {        
-                CloseHandle(hSnap); 
+            if (std::wstring(exeFile.begin(), exeFile.end()) == processName) {
+                CloseHandle(hSnap);
                 return true;
             }
         } while (Process32Next(hSnap, &pe));
@@ -60,7 +62,35 @@ bool IsProcessRunning(const std::wstring& processName) {
 }
 
 void LaunchMedal() {
-    ShellExecuteW(NULL, L"open", L"FILEPATH", NULL, NULL, SW_SHOWNORMAL);
+    wchar_t exePath[MAX_PATH];
+    GetModuleFileNameW(NULL, exePath, MAX_PATH);
+
+    std::wstring exeDir(exePath);
+    size_t lastSlash = exeDir.find_last_of(L"\\/");
+    if (lastSlash != std::wstring::npos) {
+        exeDir = exeDir.substr(0, lastSlash + 1);
+    }
+
+    std::wstring configPath = exeDir + L"medal_path.txt";
+
+    std::wifstream file(configPath.c_str());
+    if (!file.is_open()) {
+        MessageBoxW(NULL, L"Could not open 'medal_path.txt'. Make sure it's in the same folder as this .exe.", L"Error", MB_ICONERROR | MB_OK);
+        return;
+    }
+
+    std::wstringstream buffer;
+    buffer << file.rdbuf();
+    std::wstring medalPath = buffer.str();
+
+    // Trim whitespace and newlines
+    medalPath.erase(medalPath.find_last_not_of(L" \n\r\t") + 1);
+
+    if (GetFileAttributesW(medalPath.c_str()) != INVALID_FILE_ATTRIBUTES) {
+        ShellExecuteW(NULL, L"open", medalPath.c_str(), NULL, NULL, SW_SHOWNORMAL);
+    } else {
+        MessageBoxW(NULL, (L"Invalid path in medal_path.txt:\n" + medalPath).c_str(), L"Error", MB_ICONERROR | MB_OK);
+    }
 }
 
 void RestartSelf() {
@@ -76,8 +106,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
     while (true) {
         std::wstring gamePath = GetSteamGamePath();
-                                                                                                                        if (!gamePath.empty()) {
-                                                                                                                            if (!IsProcessRunning(medalProcess)) {
+        if (!gamePath.empty()) {
+            if (!IsProcessRunning(medalProcess)) {
                 LaunchMedal();
                 //MessageBoxW(NULL, L"", L"", MB_ICONINFORMATION | MB_TOPMOST | MB_SYSTEMMODAL);
             }
